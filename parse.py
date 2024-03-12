@@ -3,6 +3,8 @@ import pdfplumber
 import re
 import calapi
 
+from dateutil import parser
+
 with pdfplumber.open("cal_lms_2024.pdf") as pdf:
     # @TODO: add ability to iterate through all PDF pages
     first_page = pdf.pages[0]
@@ -40,9 +42,7 @@ def parse_date(dateStr):
     else:
         year = end_year or 2024
     dateFormatted = year + "/" + dateStr
-    formatStr = "%Y/%m/%d"
-    datetimeObj = datetime.datetime.strptime(dateFormatted, formatStr).date()
-    all_dates.append(datetimeObj)
+    datetimeObj = parse_isoformat(dateFormatted)
     return datetimeObj
 
 def parse_time():
@@ -52,6 +52,9 @@ def parse_time():
 def parse_isoformat(parsed_date, parsed_time):
     #@TODO
     print("Here's where we combine the parsed date and potential parsed time to return an isoformat datetime")
+    formatStr = "%Y/%m/%d"
+    datetimeObj = datetime.datetime.strptime(parsed_date, formatStr).date()
+    return datetimeObj
 
 # Get user input to find keyword instead of hardcoding
 keyword = input("Enter a keyword or event name: ")
@@ -75,35 +78,26 @@ for row in split:
 # This takes rows that have a hyphen and fills in the dates within
 # the date range
 # @TODO: make this... actually work reliably
-def parse_date_range(item):
-    # x = re.findall(r'\d+[/]\d+', item)
-    x = re.findall(r'\d+', item)
-    if len(x)<4:
-        rangeStr = x[0] + "/" + x[1], x[0] + "/" + x[2]
-        print(rangeStr)
-        for i in range(int(x[1]), int(x[2])+1):
-            print(x[0]+"/"+str(i))
-    elif len(x) == 4:
-        print("We need to handle multiple months here")
+def parse_date_range(unformatted_date_range):
+    print("parsing date range")
+    # split range into start and finish dates
+    x = unformatted_date_range.split("-")
+    first_date = re.split(r'[/-]', x[0])
+    start_month = first_date[0]
+    start_day = int(first_date[1])
+    end_month = first_date[0] if len(x[1])<3 else re.split(r'[/-]', x[1])[0]
+    end_day = int(x[1]) if len(x[1])<3 else re.split(r'[/-]', x[1])[1]
+    print(start_month, start_day, end_month, end_day)
 
-for item in keyword_results:
-    print(item)
-    match = re.search(r'\d*/\d*', item).group()
+    
+    list_dates = [(str(start_year) + '/' + start_month + '/' + str(x)) for x in range(start_day,end_day+1)]
+    print(list_dates)
 
-    # if contains -, send to another parsing function
-    # Maybe flag "-" check on and off? It's trigger with the age
-    # ranges in the soccer schedule
 
-    # Need a better way to find ranges. Maybe matching a
-    # regex pattern with a range would be better
-    if "-" in item:
-        # parse_date_range(item)
-        print("Hold for now") # because it's not yet functional
-    else:
-        iso = parse_date(match)
-        print(iso)
 
-    event = {
+    for date in list_dates:
+        iso = parse_isoformat(date, None)
+        event = {
         'summary': keyword,
         'start': {
             'date': str(iso),
@@ -112,10 +106,42 @@ for item in keyword_results:
             'date': str(iso)
         }
     }
+        print(event)
+
+for item in keyword_results:
+    print(item)
+    matchDate = re.search(r'\d*/\d*', item).group()
+    matchDateRange = re.search(r'\d*/\d*\-\d*', item.replace(" ", ""))
+    # if contains -, send to another parsing function
+    # Maybe flag "-" check on and off? It's trigger with the age
+    # ranges in the soccer schedule
+
+    # Need a better way to find ranges. Maybe matching a
+    # regex pattern with a range would be better
+    
+    if matchDateRange:
+        print(matchDateRange.group())
+        parse_date_range(matchDateRange.group())
+    # if "-" in item:
+    #     # parse_date_range(item)
+    #     print("Hold for now") # because it's not yet functional
+    # else:
+    #     iso = parse_date(matchDate)
+    #     print(iso)
+
+    # event = {
+    #     'summary': keyword,
+    #     'start': {
+    #         'date': str(iso),
+    #     },
+    #     'end': {
+    #         'date': str(iso)
+    #     }
+    # }
 
     # send to Google cal
     # calapi.main(event)
 
-    print(event)
+    # print(event)
 
 # print(all_dates)
