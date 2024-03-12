@@ -41,20 +41,33 @@ def parse_date(dateStr):
         year = start_year
     else:
         year = end_year or 2024
-    dateFormatted = year + "/" + dateStr
-    datetimeObj = parse_isoformat(dateFormatted, None)
+    date_formatted = year + "/" + dateStr
+    formatStr = "%Y/%m/%d"
+    datetimeObj = datetime.datetime.strptime(date_formatted, formatStr).date()
+    print("PARSE DATE", datetimeObj)
     return datetimeObj
 
-def parse_time():
+def parse_time(item):
     #@TODO
     print("Here's where we parse the time, if it's present")
+    # check for time
+    # try:
+    #     parsed = parser.parse(x, fuzzy_with_tokens=True)
+    #     print(parsed)
+    # except ValueError as e:
+    #     print(e)
+    matchTime = re.search(r'(\d{1,2}\:\d{2}\s?(?:AM|PM|am|pm))', item)
+    return matchTime.group() if matchTime else None
 
-def parse_isoformat(parsed_date, parsed_time):
+
+def parse_isoformat(parsed_date, time):
     #@TODO
     print("Here's where we combine the parsed date and potential parsed time to return an isoformat datetime")
-    formatStr = "%Y/%m/%d"
-    datetimeObj = datetime.datetime.strptime(parsed_date, formatStr).date()
-    return datetimeObj
+    start_date_str = (str(parsed_date) + time).replace(" ", "")
+    formatStr = "%Y-%m-%d%I:%M%p"
+    datetimeObj = datetime.datetime.strptime(start_date_str, formatStr)
+    print(datetimeObj.isoformat())
+    return datetimeObj.isoformat()
 
 # Get user input to find keyword instead of hardcoding
 keyword = input("Enter a keyword or event name: ")
@@ -94,18 +107,18 @@ def parse_date_range(unformatted_date_range):
     # going cross year is going to require more logic than this list comp
     # maybe will need to check if end_month < start_month to see if it crosses
     # years. This would only within one calendar year   
-    list_dates = [(str(start_year) + '/' + start_month + '/' + str(x)) for x in range(start_day,end_day+1)]
+    list_dates = [(start_month + '/' + str(x)) for x in range(start_day,end_day+1)]
     print(list_dates)
 
     for date in list_dates:
-        iso = parse_isoformat(date, None)
+        parsed_date = parse_date(date)
         event = {
         'summary': keyword,
         'start': {
-            'date': str(iso),
+            'date': str(parsed_date),
         },
         'end': {
-            'date': str(iso)
+            'date': str(parsed_date)
         }
     }
         print(event)
@@ -113,30 +126,36 @@ def parse_date_range(unformatted_date_range):
         # calapi.main(event)
 
 for item in keyword_results:
-    print(item)
+    # 1. check for range
+    # 2. check for time
+    # 3. check for date
+    # if range > parse_date_range
+    # if time and date > parse_iso
+    # if date > 
+
     matchDate = re.search(r'\d*/\d*', item).group()
     matchDateRange = re.search(r'\d*/\d*\-\d*', item.replace(" ", ""))
-    # if contains -, send to another parsing function
-    # Maybe flag "-" check on and off? It's trigger with the age
-    # ranges in the soccer schedule
-
-    # Need a better way to find ranges. Maybe matching a
-    # regex pattern with a range would be better
+    time = parse_time(str(item))
+    print("TIME", time)
     
+    if matchDate and time:
+        date = parse_date(matchDate)
+        parse_isoformat(date, time)
+
     if matchDateRange:
-        print(matchDateRange.group())
         parse_date_range(matchDateRange.group())
+    # @TODO: move logic out of here and into parse_date
     elif matchDate:
-        iso = parse_date(matchDate)
-        print(iso)
+        date = parse_date(matchDate)
         event = {
         'summary': keyword,
         'start': {
-            'date': str(iso),
+            'date': str(date),
         },
         'end': {
-            'date': str(iso)
-        }
+            'date': str(date)
+        },
+        'time': time
     }
         print(event)
     # send to Google cal
