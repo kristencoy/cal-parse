@@ -4,8 +4,6 @@ import re
 import calapi
 from event import Event
 
-from dateutil import parser
-
 with pdfplumber.open("cal_lms_2024.pdf") as pdf:
     # @TODO: add ability to iterate through all PDF pages
     first_page = pdf.pages[0]
@@ -27,32 +25,22 @@ def parse_date(dateStr):
     return datetimeObj
 
 def parse_time(item):
-    #@TODO
-    print("Here's where we parse the time, if it's present")
-    # check for time
-    # try:
-    #     parsed = parser.parse(x, fuzzy_with_tokens=True)
-    #     print(parsed)
-    # except ValueError as e:
-    #     print(e)
     matchTime = re.search(r'(\d{1,2}\:\d{2}\s?(?:AM|PM|am|pm))', item)
     return matchTime.group() if matchTime else None
 
 
-def parse_isoformat(parsed_date, time):
-    #@TODO
-    print("Here's where we combine the parsed date and potential parsed time to return an isoformat datetime")
+def parse_full_datetime(parsed_date, time):
     start_date_str = (str(parsed_date) + time).replace(" ", "")
     formatStr = "%Y-%m-%d%I:%M%p"
     datetimeObj = datetime.datetime.strptime(start_date_str, formatStr)
-    print(datetimeObj.isoformat())
-    return datetimeObj.isoformat()
+    return datetimeObj
 
 
 def find_keyword(row):
-     if keyword.lower() in row.lower():
+    if keyword.lower() in row.lower():
         keyword_results.append(row)
-        # parseDate(row.split(" ")[0])
+    else:
+        print("Event not found")
 
 def parse_range_create_events(unformatted_date_range):
     # split range into start and finish dates
@@ -75,8 +63,12 @@ def parse_range_create_events(unformatted_date_range):
         parsed_date = parse_date(date)
         event = Event(keyword, str(parsed_date), str(parsed_date))
         print(event.createAllDayEvent())
-        # send to Google cal
-        # calapi.main(event)
+        confirm = input("Export to Google Calendar? Y/N: ")
+        if confirm == 'Y':
+            # send to Google cal
+            calapi.main(event.createAllDayEvent())
+        else:
+            print("okay, event not added")
 
 
 # Get user input to find keyword instead of hardcoding, establish DS for results
@@ -99,9 +91,16 @@ for item in keyword_results:
     # if time and date > parse_iso
     if matchDate and time:
         date = parse_date(matchDate)
-        parse_isoformat(date, time)
-        event = Event(keyword, str(date), str(date))
+        start_datetime = parse_full_datetime(date, time)
+        end_datetime = start_datetime+ datetime.timedelta(hours=1)
+        event = Event(keyword, start_datetime.isoformat(), end_datetime.isoformat())
         print(event.createTimeEvent())
+        confirm = input("Export to Google Calendar? Y/N: ")
+        if confirm == 'Y':
+            # send to Google cal
+            calapi.main(event.createTimeEvent())
+        else:
+            print("okay, bye")
         # send to Google cal
         # calapi.main(event.createTimeEvent())
 
@@ -109,12 +108,18 @@ for item in keyword_results:
     elif matchDateRange:
         parse_range_create_events(matchDateRange.group())
         # event is created in that method
+
     # if date > parse date
     elif matchDate:
         date = parse_date(matchDate)
         event = Event(keyword, str(date), str(date))
         print(event.createAllDayEvent())
-        # send to Google cal
-        # calapi.main(event.createAllDayEvent())
+        confirm = input("Export to Google Calendar? Y/N: ")
+        if confirm == 'Y':
+            # send to Google cal
+            calapi.main(event.createAllDayEvent())
+        else:
+            print("okay, bye")
+        
     else:
         print("No dates found.")

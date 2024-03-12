@@ -3,28 +3,31 @@ class Event:
         self.title = title
         self.start = start
         self.end = end
-
     
     def createAllDayEvent(self):
         event = {
             'summary': self.title,
             'start': {
-                'date': self.start,
+                'date': str(self.start)
             },
             'end': {
-                'date': self.end
+                'date': str(self.end)
             },
+            'colorId': 2
         }
-        print(event)
+        return event
 
     def createTimeEvent(self):
         event = {
             'summary': self.title,
             'start': {
                 'dateTime': self.start,
+                'timeZone': 'America/New_York'
             },
             'end': {
-                'dateTime': self.end
+                'dateTime': self.end,
+                'timeZone': 'America/New_York'
             },
+            'colorId': 1
         }
-        print(event)
+        return event
