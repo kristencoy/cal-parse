@@ -17,7 +17,7 @@ def parse_date(dateStr):
     if len(nums) < 3 and nums[0] >= 8:
         year = start_year
     else:
-        year = end_year or 2024
+        year = start_year + 1
     date_formatted = year + "/" + dateStr
     formatStr = "%Y/%m/%d"
     datetimeObj = datetime.datetime.strptime(date_formatted, formatStr).date()
@@ -73,7 +73,7 @@ def parse_range_create_events(unformatted_date_range):
 
 # Get user input to find keyword instead of hardcoding, establish DS for results
 keyword = input("Enter a keyword or event name: ")
-start_year, end_year = input("Enter the start year and end year: ").split(", ")
+start_year = input("Enter the start year of the calendar: ")
 keyword_results = []
 
 for row in splitPdf:
@@ -115,7 +115,7 @@ for item in keyword_results:
         event = Event(keyword, str(date), str(date))
         print(event.createAllDayEvent())
         confirm = input("Export to Google Calendar? Y/N: ")
-        if confirm == 'Y':
+        if confirm.toUpperCase() == 'Y':
             # send to Google cal
             calapi.main(event.createAllDayEvent())
         else:

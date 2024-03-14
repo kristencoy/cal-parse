@@ -3,6 +3,9 @@
   margin: 0 auto;
   padding: 2rem;
   text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
 .logo {
@@ -27,16 +30,21 @@
   }
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  a:nth-of-type(2) .logo {
-    animation: logo-spin infinite 20s linear;
-  }
-}
-
 .card {
   padding: 2em;
 }
 
-.read-the-docs {
-  color: #888;
+h1 {
+  font-size: 72px;
+  background-image: linear-gradient(45deg, #ca4246, #e16541, #f18f43, #8b9862, #476098, #a7489b);
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+button {
+  background-image: linear-gradient(to right, #ca4246, #e16541, #f18f43, #8b9862);
+  padding: 0.5rem 1rem;
+  width: 10rem;
+  margin-top: 3rem;
+  /* background-image: linear-gradient(45deg, #ca4246, #e16541, #f18f43, #8b9862, #476098, #a7489b); */
 }
