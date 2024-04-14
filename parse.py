@@ -4,21 +4,29 @@ import re
 import calapi
 from event import Event
 
-with pdfplumber.open("cal_lms_2024.pdf") as pdf:
-    # @TODO: add ability to iterate through all PDF pages
-    first_page = pdf.pages[0]
-    pdfText = first_page.extract_text()
+pdfText = ""
+
+with pdfplumber.open("cal_soccer_2024.pdf") as pdf:
+    for page in pdf.pages:
+        pdfText += "\n" + page.extract_text()
+        print(pdfText)
+
+print(pdfText)
 
 # Split by row into an array
 splitPdf = pdfText.split("\n")
 
+print(splitPdf)
+
 def parse_date(dateStr):
     nums = [int(x) for x in dateStr.split("/")]
-    if len(nums) < 3 and nums[0] >= 8:
-        year = start_year
+    if year_span.upper() == 'N':
+        year = int(start_year)
+    elif year_span.upper() == 'Y' and len(nums) < 3 and nums[0] >= 8:
+        year = int(start_year)
     else:
-        year = start_year + 1
-    date_formatted = year + "/" + dateStr
+        year = int(start_year) + 1
+    date_formatted = str(year) + "/" + dateStr
     formatStr = "%Y/%m/%d"
     datetimeObj = datetime.datetime.strptime(date_formatted, formatStr).date()
     print("PARSE DATE", datetimeObj)
@@ -28,13 +36,11 @@ def parse_time(item):
     matchTime = re.search(r'(\d{1,2}\:\d{2}\s?(?:AM|PM|am|pm))', item)
     return matchTime.group() if matchTime else None
 
-
 def parse_full_datetime(parsed_date, time):
     start_date_str = (str(parsed_date) + time).replace(" ", "")
     formatStr = "%Y-%m-%d%I:%M%p"
     datetimeObj = datetime.datetime.strptime(start_date_str, formatStr)
     return datetimeObj
-
 
 def find_keyword(row):
     if keyword.lower() in row.lower():
@@ -64,7 +70,7 @@ def parse_range_create_events(unformatted_date_range):
         event = Event(keyword, str(parsed_date), str(parsed_date))
         print(event.createAllDayEvent())
         confirm = input("Export to Google Calendar? Y/N: ")
-        if confirm == 'Y':
+        if confirm.upper() == 'Y':
             # send to Google cal
             calapi.main(event.createAllDayEvent())
         else:
@@ -74,6 +80,7 @@ def parse_range_create_events(unformatted_date_range):
 # Get user input to find keyword instead of hardcoding, establish DS for results
 keyword = input("Enter a keyword or event name: ")
 start_year = input("Enter the start year of the calendar: ")
+year_span = input("Does this calendar cross years? Y/N: ")
 keyword_results = []
 
 for row in splitPdf:
@@ -92,11 +99,11 @@ for item in keyword_results:
     if matchDate and time:
         date = parse_date(matchDate)
         start_datetime = parse_full_datetime(date, time)
-        end_datetime = start_datetime+ datetime.timedelta(hours=1)
+        end_datetime = start_datetime + datetime.timedelta(hours=1)
         event = Event(keyword, start_datetime.isoformat(), end_datetime.isoformat())
         print(event.createTimeEvent())
         confirm = input("Export to Google Calendar? Y/N: ")
-        if confirm == 'Y':
+        if confirm.upper() == 'Y':
             # send to Google cal
             calapi.main(event.createTimeEvent())
         else:
